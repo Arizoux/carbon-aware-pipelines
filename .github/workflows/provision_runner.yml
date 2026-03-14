@@ -1,0 +1,17 @@
+name: provision_runner.yml
+on:
+  push:
+    branches: [main]
+
+jobs:
+  get-regions:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v1
+      - id: set-matrix
+        name: run region selector
+        env:
+          ELECTRICITY_MAPS_API_KEY: ${{ secrets.ELECTRICITY_MAPS_API }}
+        run: echo "matrix=$(python predictive_window.py)" >> $GITHUB_OUTPUT
