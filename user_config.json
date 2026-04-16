@@ -1,0 +1,22 @@
+{
+  "active_algorithm": "predictive_window",
+
+  "parameters": {
+    "threshold_greedy": {
+      "target_region": "FRANKFURT",
+      "threshold_gco2_kwh": 250
+    },
+
+    "predictive_window": {
+      "target_region": "STOCKHOLM",
+      "run_duration": 2,
+      "forecast_window_hours": 8
+    },
+
+    "spatio_temporal_hybrid": {
+      "allowed_regions": ["STOCKHOLM", "FRANKFURT", "QUEBEC", "PARIS"],
+      "run_duration": 2,
+      "forecast_window_hours": 6
+    }
+  }
+}
