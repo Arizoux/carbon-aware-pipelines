@@ -1,40 +1,54 @@
 import os
 import sys
 import requests
-from dotenv import load_dotenv
-
-load_dotenv()
-
-ELECTRICITY_MAPS_API_KEY = os.getenv("ELECTRICITY_MAPS_API_KEY")
+from helpers.zones import CarbonAwareRegion
 
 
-def get_electricity_maps(zone):
-    url = f"https://api.electricitymap.org/v3/carbon-intensity/latest?zone={zone}"
-    headers = {"auth-token": ELECTRICITY_MAPS_API_KEY}
+def get_current_intensity(zone_id):
+    """
+    Fetches the latest carbon intensity.
+    """
+    api_key = os.environ.get("ELECTRICITY_MAPS_API_KEY")
+    if not api_key:
+        raise ValueError("ELECTRICITY_MAPS_API_KEY is missing.")
+
+    url = f"https://api.electricitymap.org/v3/carbon-intensity/latest?zone={zone_id}&temporalGranularity=15_minutes"
+    headers = {"auth-token": api_key}
+
     response = requests.get(url, headers=headers)
     response.raise_for_status()
-    return response.json()["carbonIntensity"]
+
+    return response.json().get("carbonIntensity")
 
 
 def evaluate(params):
-    region_name = params.get("target_region")
-    threshold_GCO2_KWH = params.get("threshold_gco2_kwh")
+    target_region = params.get("target_region")
+    threshold_gco2_kwh = params.get("threshold_gco2_kwh")
 
-    if not all([region_name, threshold_GCO2_KWH]):
-        print(f"Error: Missing required parameters for Predictive Window. Got: {params}", file=sys.stderr)
+    if not target_region or threshold_gco2_kwh is None:
+        print(f"Error: Missing parameters. Got: {params}", file=sys.stderr)
         return {"should_run": False, "region": None}
 
     try:
-        current_ci = get_electricity_maps(region_name)
-        print(f"Current CI in {region_name}: {current_ci} gCO2eq/kWh", file=sys.stderr)
+        region_enum = CarbonAwareRegion[target_region]
+    except KeyError:
+        print(f"Error: {target_region} is not a valid Enum member.", file=sys.stderr)
+        return {"should_run": False, "region": None}
 
-        if current_ci <= threshold_GCO2_KWH:
-            print("should_run=true")
-            print("region=eu-central-1")
+    try:
+        current_ci = get_current_intensity(region_enum.em_id)
+        print(f"[Threshold] Current CI in {target_region} ({region_enum.em_id}): {current_ci}", file=sys.stderr)
+
+        if current_ci <= threshold_gco2_kwh:
+            print(f"Target met: {current_ci} <= {threshold_gco2_kwh}", file=sys.stderr)
+            return {
+                "should_run": True,
+                "region": region_enum.aws_id
+            }
         else:
-            print(f"Threshold not met. Waiting...", file=sys.stderr)
-            print("should_run=false")
+            print(f"Target NOT met: {current_ci} > {threshold_gco2_kwh}", file=sys.stderr)
+            return {"should_run": False, "region": None}
 
     except Exception as e:
-        print(f"Error fetching data: {e}", file=sys.stderr)
-        print("should_run=false")
+        print(f"Threshold Error: {e}", file=sys.stderr)
+        return {"should_run": False, "region": None}

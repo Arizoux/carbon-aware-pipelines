@@ -6,17 +6,15 @@ from helpers.zones import CarbonAwareRegion
 
 
 def get_forecast_for_zone(zone_id):
-    """fetches forecast data from Electricity Maps API."""
+    """Fetches the forecast with 15-minute resolution."""
     api_key = os.environ.get("ELECTRICITY_MAPS_API_KEY")
-    if not api_key:
-        raise ValueError("ELECTRICITY_MAPS_API_KEY is not set in environment.")
 
-    url = f"https://api.electricitymap.org/v3/carbon-intensity/forecast?zone={zone_id}"
+    # We add the temporalGranularity parameter here!
+    url = f"https://api.electricitymap.org/v3/carbon-intensity/forecast?zone={zone_id}&temporalGranularity=15_minutes"
+
     headers = {"auth-token": api_key}
-
     response = requests.get(url, headers=headers)
     response.raise_for_status()
-    print(response.json())
     return response.json().get("forecast", [])
 
 
@@ -27,27 +25,27 @@ def evaluate(params):
     """
     # 1. Access data passed from main.py
     # These keys must match the user_config.json exactly
-    region_name = params.get("target_region")
-    build_duration = params.get("run_duration")
-    forecast_window = params.get("forecast_window_hours")
+    target_region = params.get("target_region")
+    run_duration = params.get("run_duration")
+    forecast_window_hours = params.get("forecast_window_hours")
 
-    if not all([region_name, build_duration, forecast_window]):
+    if not all([target_region, run_duration, forecast_window_hours]):
         print(f"Error: Missing required parameters for Predictive Window. Got: {params}", file=sys.stderr)
         return {"should_run": False, "region": None}
 
     # 2. Resolve the Enum for AWS/EM IDs
     try:
-        region_enum = CarbonAwareRegion[region_name]
+        region_enum = CarbonAwareRegion[target_region]
     except KeyError:
-        print(f"Error: {region_name} not found in CarbonAwareRegion enum.", file=sys.stderr)
+        print(f"Error: {target_region} not found in CarbonAwareRegion enum.", file=sys.stderr)
         return {"should_run": False, "region": None}
 
     try:
         # 3. Fetch Data
         forecast_data = get_forecast_for_zone(region_enum.em_id)
-
+        print(f"forecast data: {forecast_data}")
         now = datetime.now(timezone.utc)
-        limit_time = now + timedelta(hours=forecast_window)
+        limit_time = now + timedelta(hours=forecast_window_hours)
 
         # Filter forecast for the search window
         relevant_points = [
@@ -57,10 +55,10 @@ def evaluate(params):
 
         # Calculate K (number of 15-min intervals in the build)
         # 2 hours = 8 points
-        k_points = int((build_duration * 60) / 15)
+        k_points = int((run_duration * 60) / 15)
 
         if len(relevant_points) < k_points:
-            print(f"Error: Not enough data points ({len(relevant_points)}) for {build_duration}h build.",
+            print(f"Error: Not enough data points ({len(relevant_points)}) for {run_duration}h build.",
                   file=sys.stderr)
             return {"should_run": False, "region": None}
 
@@ -79,10 +77,10 @@ def evaluate(params):
         # 5. Final Decision
         time_until_start = (best_start_time - now).total_seconds() / 3600
 
-        print(f"[Predictive Window] Target: {region_name} | Best Start: {best_start_time} | Avg CI: {best_avg_ci:.1f}",
+        print(f"[Predictive Window] Target: {target_region} | Best Start: {best_start_time} | Avg CI: {best_avg_ci:.1f}",
               file=sys.stderr)
 
-        # If best start is within 15 mins (0.25h), run it!
+        # If best start is within 15 mins (0.25h): run
         if time_until_start <= 0.25:
             return {
                 "should_run": True,

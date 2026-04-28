@@ -1,5 +1,5 @@
 {
-  "active_algorithm": "predictive_window",
+  "active_algorithm": "threshold_greedy",
 
   "parameters": {
     "threshold_greedy": {
@@ -10,7 +10,7 @@
     "predictive_window": {
       "target_region": "STOCKHOLM",
       "run_duration": 2,
-      "forecast_window_hours": 8
+      "forecast_window_hours": 12
     },
 
     "spatio_temporal_hybrid": {
