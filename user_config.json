@@ -1,5 +1,5 @@
 {
-  "active_algorithm": "threshold_greedy",
+  "active_algorithm": "spatio_temporal_hybrid",
 
   "parameters": {
     "threshold_greedy": {
