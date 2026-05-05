@@ -1,10 +1,10 @@
 {
-  "active_algorithm": "spatio_temporal_hybrid",
+  "active_algorithm": "threshold_greedy",
 
   "parameters": {
     "threshold_greedy": {
       "target_region": "FRANKFURT",
-      "threshold_gco2_kwh": 250
+      "threshold_gco2_kwh": 999
     },
 
     "predictive_window": {
