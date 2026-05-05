@@ -8,8 +8,6 @@ from helpers.zones import CarbonAwareRegion
 def get_forecast_for_zone(zone_id):
     """Fetches the forecast with 15-minute resolution."""
     api_key = os.environ.get("ELECTRICITY_MAPS_API_KEY")
-
-    # We add the temporalGranularity parameter here!
     url = f"https://api.electricitymap.org/v3/carbon-intensity/forecast?zone={zone_id}&temporalGranularity=15_minutes"
 
     headers = {"auth-token": api_key}
@@ -33,7 +31,6 @@ def evaluate(params):
         print(f"Error: Missing required parameters for Predictive Window. Got: {params}", file=sys.stderr)
         return {"should_run": False, "region": None}
 
-    # 2. Resolve the Enum for AWS/EM IDs
     try:
         region_enum = CarbonAwareRegion[target_region]
     except KeyError:
@@ -41,7 +38,6 @@ def evaluate(params):
         return {"should_run": False, "region": None}
 
     try:
-        # 3. Fetch Data
         forecast_data = get_forecast_for_zone(region_enum.em_id)
         print(f"forecast data: {forecast_data}")
         now = datetime.now(timezone.utc)
@@ -62,7 +58,7 @@ def evaluate(params):
                   file=sys.stderr)
             return {"should_run": False, "region": None}
 
-        # 4. Sliding Window Implementation
+        # Sliding Window Implementation
         best_avg_ci = float('inf')
         best_start_time = None
 
@@ -74,7 +70,6 @@ def evaluate(params):
                 best_avg_ci = avg_ci
                 best_start_time = datetime.fromisoformat(window[0]["datetime"].replace('Z', '+00:00'))
 
-        # 5. Final Decision
         time_until_start = (best_start_time - now).total_seconds() / 3600
 
         print(f"[Predictive Window] Target: {target_region} | Best Start: {best_start_time} | Avg CI: {best_avg_ci:.1f}",
@@ -82,13 +77,13 @@ def evaluate(params):
 
         # If best start is within 15 mins (0.25h): run
         if time_until_start <= 0.25:
-            return {
-                "should_run": True,
-                "region": region_enum.aws_id
-            }
+            return {"should_run": True, "region": region_enum.gcp_id}
         else:
-            print(f"Optimal slot is {time_until_start:.1f}h away. Waiting...", file=sys.stderr)
-            return {"should_run": False, "region": None}
+            return {
+                "should_run": False,
+                "region": region_enum.gcp_id,
+                "planned_time": best_start_time["start_time"].isoformat()
+            }
 
     except Exception as e:
         print(f"Algorithm Error: {e}", file=sys.stderr)

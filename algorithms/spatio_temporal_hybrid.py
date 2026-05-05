@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 import sys
 import requests
-import time
 from datetime import datetime, timezone, timedelta
 from helpers.zones import CarbonAwareRegion
 
@@ -126,21 +125,21 @@ def evaluate(params):
         return {"should_run": False, "region": None}
 
     best_region = global_best["region"]
-    best_start = global_best["start_time"]
-    time_until_start = (best_start - now).total_seconds() / 3600
+    best_start_time = global_best["start_time"]
+    time_until_start = (best_start_time - now).total_seconds() / 3600
 
     print(f"--- Global Winner ---", file=sys.stderr)
-    print(f"Region: {best_region.name} ({best_region.aws_id})", file=sys.stderr)
-    print(f"Optimal Start: {best_start} UTC (in {time_until_start:.2f}h)", file=sys.stderr)
+    print(f"Region: {best_region.name} ({best_region.gcp_id})", file=sys.stderr)
+    print(f"Optimal Start: {best_start_time} UTC (in {time_until_start:.2f}h)", file=sys.stderr)
     print(f"Avg CI: {global_best['avg_ci']:.1f} gCO2eq/kWh", file=sys.stderr)
 
     # 6. Return Decision
-    # Trigger if we are within the 15-minute start window
+    # Trigger if time is within the 15-minute start window
     if time_until_start <= 0.25:
-        return {
-            "should_run": True,
-            "region": best_region.aws_id
-        }
+        return {"should_run": True, "region": best_region.gcp_id}
     else:
-        print(f"Waiting for more optimal conditions in {best_region.name}...", file=sys.stderr)
-        return {"should_run": False, "region": None}
+        return {
+            "should_run": False,
+            "region": best_region.gcp_id,
+            "planned_time": best_start_time["start_time"].isoformat()
+        }
