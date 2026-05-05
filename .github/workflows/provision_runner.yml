@@ -39,7 +39,7 @@ jobs:
       - name: Run Carbon Scheduler Strategy
         id: algo
         env:
-          ELECTRICITY_MAPS_API_KEY: ${{ secrets.ELECTRICITY_MAPS_API_KEY }}
+          ELECTRICITY_MAPS_API: ${{ secrets.ELECTRICITY_MAPS_API }}
         run: python main.py
 
   provision_and_test:
@@ -55,7 +55,7 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+          credentials_json: ${{ secrets.GPC_API_KEY }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
