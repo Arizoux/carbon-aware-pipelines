@@ -7,7 +7,7 @@ from helpers.zones import CarbonAwareRegion
 
 load_dotenv()
 
-ELECTRICITY_MAPS_API_KEY = os.getenv("ELECTRICITY_MAPS_API_KEY")
+ELECTRICITY_MAPS_API_KEY = os.getenv("ELECTRICITY_MAPS_API")
 
 
 def get_forecast_for_zone(zone_id):

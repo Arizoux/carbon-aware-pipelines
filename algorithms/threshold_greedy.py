@@ -7,7 +7,7 @@ def get_current_intensity(zone_id):
     """
     Fetches the latest carbon intensity from Electricity Maps.
     """
-    api_key = os.environ.get("ELECTRICITY_MAPS_API_KEY")
+    api_key = os.getenv("ELECTRICITY_MAPS_API")
     if not api_key:
         raise ValueError("ELECTRICITY_MAPS_API_KEY is missing.")
 

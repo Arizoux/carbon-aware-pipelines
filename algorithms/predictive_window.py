@@ -7,7 +7,7 @@ from helpers.zones import CarbonAwareRegion
 
 def get_forecast_for_zone(zone_id):
     """Fetches the forecast with 15-minute resolution."""
-    api_key = os.environ.get("ELECTRICITY_MAPS_API_KEY")
+    api_key = os.environ.get("ELECTRICITY_MAPS_API")
     url = f"https://api.electricitymap.org/v3/carbon-intensity/forecast?zone={zone_id}&temporalGranularity=15_minutes"
 
     headers = {"auth-token": api_key}
