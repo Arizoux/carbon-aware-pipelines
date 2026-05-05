@@ -1,17 +1,104 @@
-name: provision_runner.yml
+name: Carbon-Aware Spatio-Temporal Pipeline
+
 on:
-  push:
-    branches: [main]
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 
 jobs:
-  get-regions:
+  evaluate_grid:
+    name: Check Carbon Intensity
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      should_run: ${{ steps.algo.outputs.should_run }}
+      target_region: ${{ steps.algo.outputs.region }}
+
     steps:
-      - uses: actions/checkout@v1
-      - id: set-matrix
-        name: run region selector
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      # 1. Cache the 'plan.json' file to freeze the decision window
+      - name: Cache Scheduler State
+        uses: actions/cache@v3
+        with:
+          path: plan.json
+          key: carbon-plan-${{ github.run_id }}
+          restore-keys: |
+            carbon-plan-
+
+      # 2. Run the Python Script
+      - name: Run Carbon Scheduler Strategy
+        id: algo
         env:
-          ELECTRICITY_MAPS_API_KEY: ${{ secrets.ELECTRICITY_MAPS_API }}
-        run: echo "matrix=$(python predictive_window.py)" >> $GITHUB_OUTPUT
+          ELECTRICITY_MAPS_API_KEY: ${{ secrets.ELECTRICITY_MAPS_API_KEY }}
+        run: python main.py
+
+  provision_and_test:
+    name: Terraform & Build
+    needs: evaluate_grid
+    if: needs.evaluate_grid.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # 3. Create Ephemeral SSH Key
+      - name: Generate SSH Key
+        run: |
+          ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+          echo "SSH_PUB_KEY=$(cat ~/.ssh/id_rsa.pub)" >> $GITHUB_ENV
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Terraform Apply (Provision VM)
+        working-directory: ./terraform
+        env:
+          TF_VAR_gcp_region: ${{ needs.evaluate_grid.outputs.target_region }}
+          TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TF_VAR_ssh_pub_key: ${{ env.SSH_PUB_KEY }}
+        run: terraform apply -auto-approve
+
+      - name: Run CI/CD Workload
+        run: |
+          VM_IP=$(terraform -chdir=./terraform output -raw vm_ip)
+          
+          echo "Waiting for SSH on $VM_IP..."
+          while ! nc -z $VM_IP 22; do sleep 5; done
+          echo "SSH is up!"
+
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa"
+          
+          echo "Transferring files..."
+          scp $SSH_OPTS -r ./* runner@$VM_IP:/home/runner/
+          
+          echo "Executing workload on VM..."
+          ssh $SSH_OPTS runner@$VM_IP "chmod +x build.sh && ./build.sh"
+
+      - name: Terraform Destroy
+        if: always()
+        working-directory: ./terraform
+        env:
+          TF_VAR_gcp_region: ${{ needs.evaluate_grid.outputs.target_region }}
+          TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TF_VAR_ssh_pub_key: ${{ env.SSH_PUB_KEY }}
+        run: terraform destroy -auto-approve
