@@ -49,6 +49,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -56,9 +60,6 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GPC_API_KEY }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
 
       # 3. Create Ephemeral SSH Key
       - name: Generate SSH Key
