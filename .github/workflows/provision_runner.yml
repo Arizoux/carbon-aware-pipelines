@@ -76,7 +76,7 @@ jobs:
         working-directory: ./terraform
         env:
           TF_VAR_gcp_region: ${{ needs.evaluate_grid.outputs.target_region }}
-          TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TF_VAR_gcp_project_id: ${{ secrets.GPC_PROJECT_ID }}
           TF_VAR_ssh_pub_key: ${{ env.SSH_PUB_KEY }}
         run: terraform apply -auto-approve
 
@@ -101,6 +101,6 @@ jobs:
         working-directory: ./terraform
         env:
           TF_VAR_gcp_region: ${{ needs.evaluate_grid.outputs.target_region }}
-          TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TF_VAR_gcp_project_id: ${{ secrets.GPC_PROJECT_ID }}
           TF_VAR_ssh_pub_key: ${{ env.SSH_PUB_KEY }}
         run: terraform destroy -auto-approve
