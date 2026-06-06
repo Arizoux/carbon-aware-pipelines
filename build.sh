@@ -2,29 +2,66 @@
 # Exit on error
 set -e
 
+# Welcher Workload soll ausgeführt werden? (short, mid, long)
+# Fallback ist 'short', falls nichts übergeben wird
+WORKLOAD=${1:-short}
+
 echo "===================================================="
-echo "🌍 CARBON-AWARE PIPELINE: HELLO WORLD CHECK"
+echo "🌍 CARBON-AWARE PIPELINE: STARTING WORKLOAD"
 echo "===================================================="
-echo "✅ VM Successfully Provisioned"
-echo "✅ SSH Connection Established"
-echo "📍 GCP Region: $(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/zone | awk -F/ '{print $NF}')"
-echo "🖥️ Machine Type: $(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type | awk -F/ '{print $NF}')"
-echo "🕒 Time on VM: $(date)"
+echo "📍 GCP Zone: $(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/zone | awk -F/ '{print $NF}')"
+echo "🖥️ Machine: $(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type | awk -F/ '{print $NF}')"
+echo "📦 Selected Workload: ${WORKLOAD^^}"
 echo "===================================================="
 
+START_TIME=$(date +%s)
 
-# Microservices
-if [ -f "docker-compose.yml" ]; then
-    echo "📦 Docker Compose found. Starting build..."
-    sudo docker compose build
-    sudo docker compose up -d
-    sudo docker compose run tests
-fi
+if [ "$WORKLOAD" = "short" ]; then
+    echo "⚡ Running Short Workload (Hello World)..."
+    sleep 5
+    echo "✅ Hello World Check passed."
 
-# Kernel/C Project
-if [ -f "Makefile" ]; then
-    echo "🛠️ Makefile found. Starting compilation..."
+elif [ "$WORKLOAD" = "mid" ]; then
+    echo "🐳 Running Mid Workload (Machine Learning Model Training)..."
+    cd workloads/ml-training
+
+    echo "🔨 Building Docker Image (Installing ML Libraries)..."
+    sudo docker compose build --no-cache
+
+    echo "🧠 Running Neural Network Training Loop..."
+    sudo docker compose up --abort-on-container-exit
+
+    echo "🛑 Cleaning up..."
+    sudo docker compose down
+
+elif [ "$WORKLOAD" = "long" ]; then
+    echo "🐧 Running Long Workload (Linux Kernel Compilation)..."
+    KERNEL_VERSION="6.8.4"
+
+    echo "⬇️ Downloading Linux Kernel v${KERNEL_VERSION}..."
+    wget -q https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz
+
+    echo "📦 Extracting Archive..."
+    tar -xf linux-${KERNEL_VERSION}.tar.xz
+    cd linux-${KERNEL_VERSION}
+
+    echo "⚙️ Configuring Build (defconfig)..."
+    make defconfig
+
+    echo "🔨 Compiling Kernel with $(nproc) cores..."
     make -j$(nproc)
+
+    echo "Kernel compiled successfully."
+
+else
+    echo "Unknown Workload: $WORKLOAD"
+    exit 1
 fi
 
-echo "🚀 Test Sequence Finished Successfully!"
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+
+echo "===================================================="
+echo "🚀 Pipeline Finished Successfully!"
+echo "⏱️ Total Run Time (E_run phase): ${DURATION} seconds"
+echo "===================================================="

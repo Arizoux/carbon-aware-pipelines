@@ -1,22 +1,32 @@
 {
-  "active_algorithm": "threshold_greedy",
+  "active_profile": "carbon",
+  "active_workload": "mid",
 
-  "parameters": {
-    "threshold_greedy": {
-      "target_region": "FRANKFURT",
-      "threshold_gco2_kwh": 999
+  "profiles": {
+    "carbon": {
+      "strategy": "spatio_temporal_hybrid",
+      "enable_batching": true,
+      "machine_type": "e2-standard-4",
+      "provisioning_model": "SPOT",
+      "home_region": "FRANKFURT",
+      "allowed_regions": ["STOCKHOLM", "FRANKFURT", "QUEBEC", "OREGON"],
+      "forecast_window_hours": 1,
+      "run_duration_hours": 0.25,
+      "energy_kwh": { "e_boot": 0.001, "e_run": 0.005 }
     },
-
-    "predictive_window": {
-      "target_region": "STOCKHOLM",
-      "run_duration": 2,
-      "forecast_window_hours": 12
+    "latency": {
+      "strategy": "immediate",
+      "region": "europe-west3",
+      "machine_type": "e2-standard-16",
+      "provisioning_model": "STANDARD",
+      "run_duration_hours": 0.25
     },
-
-    "spatio_temporal_hybrid": {
-      "allowed_regions": ["STOCKHOLM", "FRANKFURT", "QUEBEC", "PARIS"],
-      "run_duration": 2,
-      "forecast_window_hours": 6
+    "cost": {
+      "strategy": "immediate",
+      "region": "us-central1",
+      "machine_type": "e2-standard-4",
+      "provisioning_model": "SPOT",
+      "run_duration_hours": 0.25
     }
   }
 }

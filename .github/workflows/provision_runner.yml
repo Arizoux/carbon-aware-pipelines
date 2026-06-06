@@ -7,11 +7,13 @@ on:
 
 jobs:
   evaluate_grid:
-    name: Check Carbon Intensity
     runs-on: ubuntu-latest
     outputs:
       should_run: ${{ steps.algo.outputs.should_run }}
-      target_region: ${{ steps.algo.outputs.region }}
+      region: ${{ steps.algo.outputs.region }}
+      machine_type: ${{ steps.algo.outputs.machine_type }}
+      provisioning_model: ${{ steps.algo.outputs.provisioning_model }}
+      workload: ${{ steps.algo.outputs.workload }}
 
     steps:
       - name: Checkout Code
@@ -78,23 +80,24 @@ jobs:
           TF_VAR_gcp_region: ${{ needs.evaluate_grid.outputs.target_region }}
           TF_VAR_gcp_project_id: ${{ secrets.GPC_PROJECT_ID }}
           TF_VAR_ssh_pub_key: ${{ env.SSH_PUB_KEY }}
+          TF_VAR_gcp_machine_type: ${{ needs.evaluate_grid.outputs.machine_type }}
+          TF_VAR_gcp_provisioning_model: ${{ needs.evaluate_grid.outputs.provisioning_model }}
         run: terraform apply -auto-approve
 
       - name: Run CI/CD Workload
         run: |
-          VM_IP=$(terraform -chdir=./terraform output -raw vm_ip)
-          
-          echo "Waiting for SSH on $VM_IP..."
-          while ! nc -z $VM_IP 22; do sleep 5; done
-          echo "SSH is up!"
-
-          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa"
-          
-          echo "Transferring files..."
-          scp $SSH_OPTS -r ./* runner@$VM_IP:/home/runner/
-          
-          echo "Executing workload on VM..."
-          ssh $SSH_OPTS runner@$VM_IP "chmod +x build.sh && ./build.sh"
+            VM_IP=$(terraform -chdir=./terraform output -raw vm_ip)
+            
+            TARGET_WORKLOAD="${{ needs.evaluate_grid.outputs.workload }}"
+            
+            echo "Waiting for SSH on $VM_IP..."
+            while ! nc -z $VM_IP 22; do sleep 5; done
+            
+            SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa"
+            scp $SSH_OPTS -r ./* runner@$VM_IP:/home/runner/
+            
+            # NEU: Wir übergeben die Variable dynamisch an das Bash-Skript
+            ssh $SSH_OPTS runner@$VM_IP "chmod +x build.sh && ./build.sh $TARGET_WORKLOAD"
 
       - name: Terraform Destroy
         if: always()
@@ -103,4 +106,6 @@ jobs:
           TF_VAR_gcp_region: ${{ needs.evaluate_grid.outputs.target_region }}
           TF_VAR_gcp_project_id: ${{ secrets.GPC_PROJECT_ID }}
           TF_VAR_ssh_pub_key: ${{ env.SSH_PUB_KEY }}
+          TF_VAR_gcp_machine_type: ${{ needs.evaluate_grid.outputs.machine_type }}
+          TF_VAR_gcp_provisioning_model: ${{ needs.evaluate_grid.outputs.provisioning_model }}
         run: terraform destroy -auto-approve

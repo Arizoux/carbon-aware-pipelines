@@ -15,11 +15,11 @@ provider "google" {
 
 resource "google_compute_instance" "thesis_runner" {
   name         = "green-thesis-runner"
-  machine_type = "e2-standard-8"
+  machine_type = var.gcp_machine_type
 
   scheduling {
-    provisioning_model  = "SPOT"
-    preemptible         = true
+    provisioning_model  = var.gcp_provisioning_model
+    preemptible         = var.gcp_provisioning_model == "SPOT" ? true : false
     automatic_restart   = false
   }
 
@@ -41,13 +41,19 @@ resource "google_compute_instance" "thesis_runner" {
     ssh-keys = "${var.ssh_user}:${var.ssh_pub_key}"
   }
 
-  # 2. Pre-install your dependencies
+  # 2. Pre-install your dependencies (Fixed for Docker Compose v2 & Kernel Builds)
   metadata_startup_script = <<-EOT
     #!/bin/bash
     sudo apt-get update
-    sudo apt-get install -y docker.io docker-compose build-essential libncurses-dev bison flex libssl-dev libelf-dev
+
+    sudo apt-get install -y docker.io docker-compose-v2 build-essential libncurses-dev bison flex libssl-dev libelf-dev jq netcat-openbsd
+
+    sudo systemctl enable docker
     sudo systemctl start docker
+
     sudo usermod -aG docker ${var.ssh_user}
+
+    sudo gpasswd -a ${var.ssh_user} docker
   EOT
 }
 

@@ -12,9 +12,8 @@ ELECTRICITY_MAPS_API_KEY = os.getenv("ELECTRICITY_MAPS_API")
 
 def get_forecast_for_zone(zone_id):
     """Fetches the 15-minute granularity forecast from Electricity Maps."""
-    api_key = os.environ.get("ELECTRICITY_MAPS_API_KEY")
     url = f"https://api.electricitymap.org/v3/carbon-intensity/forecast?zone={zone_id}&temporalGranularity=15_minutes"
-    headers = {"auth-token": api_key}
+    headers = {"auth-token": ELECTRICITY_MAPS_API_KEY}
 
     try:
         response = requests.get(url, headers=headers, timeout=10)
@@ -141,5 +140,5 @@ def evaluate(params):
         return {
             "should_run": False,
             "region": best_region.gcp_id,
-            "planned_time": best_start_time["start_time"].isoformat()
+            "planned_time": best_start_time.isoformat()
         }
