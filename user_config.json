@@ -10,7 +10,7 @@
       "provisioning_model": "SPOT",
       "home_region": "FRANKFURT",
       "allowed_regions": ["STOCKHOLM", "FRANKFURT", "QUEBEC", "OREGON"],
-      "forecast_window_hours": 1,
+      "forecast_window_hours": 0.5,
       "run_duration": 0.25,
       "energy_kwh": { "e_boot": 0.001, "e_run": 0.005 }
     },
