@@ -28,3 +28,9 @@ variable "gcp_provisioning_model" {
   description = "SPOT or STANDARD"
   type        = string
 }
+
+variable "runner_name" {
+  description = "Name and run_type label for this runner (e.g. green-thesis-runner, cost-runner, lat-e2-runner, lat-c2-runner)"
+  type        = string
+  default     = "green-thesis-runner"
+}

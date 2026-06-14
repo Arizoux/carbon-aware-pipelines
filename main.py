@@ -12,7 +12,7 @@ def load_config(config_path="user_config.json"):
         return json.load(f)
 
 
-def write_github_output(should_run, region, machine_type, prov_model, workload):
+def write_github_output(should_run, region, machine_type, prov_model, workload, runner_name):
     """Writes the scheduling results directly to GitHub Actions output environment."""
     if not os.environ.get('GITHUB_OUTPUT'):
         return
@@ -23,6 +23,7 @@ def write_github_output(should_run, region, machine_type, prov_model, workload):
         f.write(f"machine_type={machine_type}\n")
         f.write(f"provisioning_model={prov_model}\n")
         f.write(f"workload={workload}\n")
+        f.write(f"runner_name={runner_name}\n")
 
 
 def check_existing_plan(machine_type, prov_model):
@@ -58,12 +59,12 @@ def check_existing_plan(machine_type, prov_model):
 def main():
     config = load_config()
 
-    # HIER SIND DIE GLOBALEN CALLS DIREKT UNTEREINANDER
     active_profile = config.get("active_profile")
-    active_workload = config.get("active_workload", "short")  # Holt sich den Workload von der Root-Ebene
+    active_workload = config.get("active_workload", "short")
 
     params = config.get("profiles", {}).get(active_profile, {})
     batching_enabled = params.get("enable_batching", True)
+    runner_name = params.get("runner_name", "green-thesis-runner")
 
     print(f"--- ACTIVE PROFILE: {active_profile.upper()} ---")
     print(f"--- GLOBAL WORKLOAD: {active_workload.upper()} ---")
@@ -74,7 +75,7 @@ def main():
             plan_result = check_existing_plan(params["machine_type"], params["provisioning_model"])
             if plan_result:
                 write_github_output(plan_result["should_run"], params["region"], params["machine_type"],
-                                    params["provisioning_model"], active_workload)
+                                    params["provisioning_model"], active_workload, runner_name)
                 return
 
             delay_minutes = params.get("batch_window_minutes", 15)
@@ -86,11 +87,11 @@ def main():
                 json.dump({"planned_time": target_time.isoformat(), "region": params["region"], "batch_count": 1}, f)
 
             write_github_output(False, params["region"], params["machine_type"], params["provisioning_model"],
-                                active_workload)
+                                active_workload, runner_name)
             return
         else:
             write_github_output(True, params["region"], params["machine_type"], params["provisioning_model"],
-                                active_workload)
+                                active_workload, runner_name)
             return
 
     # 2. CARBON-Strategie (Spatio-Temporal)
@@ -98,7 +99,7 @@ def main():
         plan_result = check_existing_plan(params["machine_type"], params["provisioning_model"])
         if plan_result:
             write_github_output(plan_result["should_run"], plan_result["region"], params["machine_type"],
-                                params["provisioning_model"], active_workload)
+                                params["provisioning_model"], active_workload, runner_name)
             return
 
     result = spatio_temporal_hybrid.evaluate(params)
@@ -108,7 +109,7 @@ def main():
             json.dump({"planned_time": result["planned_time"], "region": result["region"], "batch_count": 1}, f)
 
     write_github_output(result.get("should_run"), result.get("region"), params["machine_type"],
-                        params["provisioning_model"], active_workload)
+                        params["provisioning_model"], active_workload, runner_name)
 
 
 if __name__ == "__main__":

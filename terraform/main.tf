@@ -14,8 +14,12 @@ provider "google" {
 }
 
 resource "google_compute_instance" "thesis_runner" {
-  name         = "green-thesis-runner"
+  name         = var.runner_name
   machine_type = var.gcp_machine_type
+
+  labels = {
+    run_type = var.runner_name
+  }
 
   scheduling {
     provisioning_model  = var.gcp_provisioning_model
