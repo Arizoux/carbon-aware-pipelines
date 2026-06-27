@@ -1,8 +1,6 @@
 name: Carbon-Aware Spatio-Temporal Pipeline
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 jobs:
