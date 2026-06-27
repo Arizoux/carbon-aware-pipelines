@@ -10,7 +10,6 @@ import os
 def main():
     print("🧠 Starting ML Workload: Training CNN on CIFAR-10")
 
-    # Nutze alle verfügbaren CPU-Kerne der VM
     num_cores = os.cpu_count()
     torch.set_num_threads(num_cores)
     print(f"🖥️ PyTorch is utilizing {num_cores} CPU cores for training.")
@@ -19,7 +18,6 @@ def main():
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True, num_workers=2)
 
-    # 2. Einfaches Convolutional Neural Network (CNN) definieren
     model = nn.Sequential(
         nn.Conv2d(3, 32, 3, padding=1), nn.ReLU(),
         nn.MaxPool2d(2, 2),
@@ -33,9 +31,6 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    # 3. Training Loop
-    # 5 Epochen dauern auf einer e2-standard-4 (nur CPU) ca. 4-5 Minuten.
-    # Du kannst diesen Wert anpassen (z.B. auf 4 oder 6), um genau deine Wunschzeit zu treffen.
     EPOCHS = 40
     start_time = time.time()
 
