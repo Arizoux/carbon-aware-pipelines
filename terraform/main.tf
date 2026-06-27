@@ -52,12 +52,16 @@ resource "google_compute_instance" "thesis_runner" {
 
   metadata_startup_script = <<-EOT
     #!/bin/bash
+    export DEBIAN_FRONTEND=noninteractive
     sudo apt-get update
     sudo apt-get install -y docker.io docker-compose-v2 build-essential libncurses-dev bison flex libssl-dev libelf-dev jq netcat-openbsd
     sudo systemctl enable docker
     sudo systemctl start docker
     sudo usermod -aG docker ${var.ssh_user}
     sudo gpasswd -a ${var.ssh_user} docker
+
+    # FIXED: Signal-Datei erstellen, wenn alles installiert ist
+    touch /tmp/startup_finished
   EOT
 }
 
