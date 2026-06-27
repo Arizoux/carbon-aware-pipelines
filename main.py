@@ -18,7 +18,7 @@ def write_github_output(should_run, region, machine_type, prov_model, workload, 
         return
     with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
         f.write(f"should_run={str(should_run).lower()}\n")
-        f.write(f"region={region if region else ''}\n")
+        f.write(f"region={region if region else ''}\n")  # Verhindert leere Variablen-Crashes in Terraform
         f.write(f"machine_type={machine_type}\n")
         f.write(f"provisioning_model={prov_model}\n")
         f.write(f"workload={workload}\n")
@@ -41,7 +41,6 @@ def check_existing_plan(machine_type, prov_model):
     # Differenz in Minuten berechnen
     time_diff_minutes = (target_time - now).total_seconds() / 60
 
-    # Wenn die geplante Zeit erreicht ist (oder weniger als 5 Minuten entfernt)
     if time_diff_minutes <= 5:
         print(f"[Batching] It is time! Executing consolidated run ({plan['batch_count']} commits).", file=sys.stderr)
         os.remove(PLAN_FILE)
@@ -68,12 +67,12 @@ def main():
     print(f"--- ACTIVE PROFILE: {active_profile.upper()} ---")
     print(f"--- GLOBAL WORKLOAD: {active_workload.upper()} ---")
 
-    # 1. IMMEDIATE-Strategien (Latency / Cost)
     if params.get("strategy") == "immediate":
+        fixed_region = params.get("region")
         if batching_enabled:
             plan_result = check_existing_plan(params["machine_type"], params["provisioning_model"])
             if plan_result:
-                write_github_output(plan_result["should_run"], params["region"], params["machine_type"],
+                write_github_output(plan_result["should_run"], plan_result["region"], params["machine_type"],
                                     params["provisioning_model"], active_workload, runner_name)
                 return
 
@@ -83,17 +82,16 @@ def main():
             print(f"[Batching] Initializing new batch for {active_profile}. Waiting {delay_minutes} minutes.",
                   file=sys.stderr)
             with open(PLAN_FILE, "w") as f:
-                json.dump({"planned_time": target_time.isoformat(), "region": params["region"], "batch_count": 1}, f)
+                json.dump({"planned_time": target_time.isoformat(), "region": fixed_region, "batch_count": 1}, f)
 
-            write_github_output(False, params["region"], params["machine_type"], params["provisioning_model"],
+            write_github_output(False, fixed_region, params["machine_type"], params["provisioning_model"],
                                 active_workload, runner_name)
             return
         else:
-            write_github_output(True, params["region"], params["machine_type"], params["provisioning_model"],
+            write_github_output(True, fixed_region, params["machine_type"], params["provisioning_model"],
                                 active_workload, runner_name)
             return
 
-    # 2. CARBON-Strategie (Spatio-Temporal)
     if batching_enabled:
         plan_result = check_existing_plan(params["machine_type"], params["provisioning_model"])
         if plan_result:

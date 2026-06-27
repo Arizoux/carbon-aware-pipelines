@@ -10,12 +10,18 @@ terraform {
 provider "google" {
   project = var.gcp_project_id
   region  = var.gcp_region
-  zone    = "${var.gcp_region}-a"
+}
+
+data "google_compute_zones" "available" {
+  region = var.gcp_region
+  status = "UP"
 }
 
 resource "google_compute_instance" "thesis_runner" {
   name         = var.runner_name
   machine_type = var.gcp_machine_type
+
+  zone         = data.google_compute_zones.available.names[0]
 
   labels = {
     run_type = var.runner_name
@@ -40,23 +46,17 @@ resource "google_compute_instance" "thesis_runner" {
     access_config {}
   }
 
-  # 1. Inject the SSH Key into the VM
   metadata = {
     ssh-keys = "${var.ssh_user}:${var.ssh_pub_key}"
   }
 
-  # 2. Pre-install your dependencies (Fixed for Docker Compose v2 & Kernel Builds)
   metadata_startup_script = <<-EOT
     #!/bin/bash
     sudo apt-get update
-
     sudo apt-get install -y docker.io docker-compose-v2 build-essential libncurses-dev bison flex libssl-dev libelf-dev jq netcat-openbsd
-
     sudo systemctl enable docker
     sudo systemctl start docker
-
     sudo usermod -aG docker ${var.ssh_user}
-
     sudo gpasswd -a ${var.ssh_user} docker
   EOT
 }
