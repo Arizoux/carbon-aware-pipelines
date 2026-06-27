@@ -1,6 +1,6 @@
 {
-  "active_profile": "cost",
-  "active_workload": "mid",
+  "active_profile": "latency_e2",
+  "active_workload": "long",
 
   "profiles": {
     "carbon": {
@@ -19,7 +19,7 @@
       "strategy": "immediate",
       "runner_name": "lat-e2-runner",
       "region": "europe-west3",
-      "machine_type": "e2-standard-16",
+      "machine_type": "e2-standard-32",
       "provisioning_model": "STANDARD",
       "run_duration": 0.25
     },
@@ -27,7 +27,7 @@
       "strategy": "immediate",
       "runner_name": "lat-c2-runner",
       "region": "europe-west3",
-      "machine_type": "c2-standard-8",
+      "machine_type": "c2-standard-60",
       "provisioning_model": "STANDARD",
       "run_duration": 0.25
     },
