@@ -61,18 +61,22 @@ def main():
     active_workload = config.get("active_workload", "short")
 
     params = config.get("profiles", {}).get(active_profile, {})
-    batching_enabled = params.get("enable_batching", True)
     runner_name = params.get("runner_name", "green-thesis-runner")
 
     print(f"--- ACTIVE PROFILE: {active_profile.upper()} ---")
     print(f"--- GLOBAL WORKLOAD: {active_workload.upper()} ---")
 
+    # 1. IMMEDIATE-Strategien (Latency / Cost)
     if params.get("strategy") == "immediate":
         fixed_region = params.get("region")
-        if batching_enabled:
+
+        batching_enabled_immediate = params.get("enable_batching", False)
+
+        if batching_enabled_immediate:
             plan_result = check_existing_plan(params["machine_type"], params["provisioning_model"])
             if plan_result:
-                write_github_output(plan_result["should_run"], plan_result["region"], params["machine_type"],
+                # FIXED: Wir nutzen fixed_region statt plan_result["region"], falls noch Fragmente im Cache lagen
+                write_github_output(plan_result["should_run"], fixed_region, params["machine_type"],
                                     params["provisioning_model"], active_workload, runner_name)
                 return
 
@@ -92,7 +96,10 @@ def main():
                                 active_workload, runner_name)
             return
 
-    if batching_enabled:
+    # 2. CARBON-Strategie (Spatio-Temporal)
+    batching_enabled_carbon = params.get("enable_batching", True)  # Für Carbon bleibt Default True
+
+    if batching_enabled_carbon:
         plan_result = check_existing_plan(params["machine_type"], params["provisioning_model"])
         if plan_result:
             write_github_output(plan_result["should_run"], plan_result["region"], params["machine_type"],
@@ -101,7 +108,7 @@ def main():
 
     result = spatio_temporal_hybrid.evaluate(params)
 
-    if batching_enabled and not result.get("should_run") and result.get("planned_time"):
+    if batching_enabled_carbon and not result.get("should_run") and result.get("planned_time"):
         with open(PLAN_FILE, "w") as f:
             json.dump({"planned_time": result["planned_time"], "region": result["region"], "batch_count": 1}, f)
 
