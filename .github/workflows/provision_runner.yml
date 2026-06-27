@@ -91,11 +91,9 @@ jobs:
             echo "Waiting for SSH on $VM_IP..."
             while ! nc -z $VM_IP 22; do sleep 5; done
             
-            # SSH-Optionen definieren, damit sie für den Check bereitstehen
             SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa"
             
             echo "Waiting for GCP startup script to finish installing Docker..."
-            # FIXED: Wartet jetzt auf unseren Custom-Marker
             while ! ssh $SSH_OPTS runner@$VM_IP "test -f /tmp/startup_finished" >/dev/null 2>&1; do
               echo "Dependencies are still installing... retrying in 10 seconds."
               sleep 10
