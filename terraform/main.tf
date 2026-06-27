@@ -54,13 +54,26 @@ resource "google_compute_instance" "thesis_runner" {
     #!/bin/bash
     export DEBIAN_FRONTEND=noninteractive
     sudo apt-get update
-    sudo apt-get install -y docker.io docker-compose-v2 build-essential libncurses-dev bison flex libssl-dev libelf-dev jq netcat-openbsd
-    sudo systemctl enable docker
-    sudo systemctl start docker
-    sudo usermod -aG docker ${var.ssh_user}
-    sudo gpasswd -a ${var.ssh_user} docker
 
-    # FIXED: Signal-Datei erstellen, wenn alles installiert ist
+    # Basis-Abhängigkeiten, die wir immer brauchen
+    sudo apt-get install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev jq netcat-openbsd
+
+    # Wir holen uns die Workload-Variable direkt aus den Instanz-Metadaten von GCP
+    WORKLOAD=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/workload)
+
+    # Nativer Bash-Vergleich statt Terraform-Templating
+    if [ "$WORKLOAD" = "mid" ]; then
+        echo "Installing Docker for MID workload..."
+        sudo apt-get install -y docker.io docker-compose-v2
+        sudo systemctl enable docker
+        sudo systemctl start docker
+        sudo usermod -aG docker ${var.ssh_user}
+        sudo gpasswd -a ${var.ssh_user} docker
+    else
+        echo "Skipping Docker installation for workload: $WORKLOAD"
+    fi
+
+    # Marker für GitHub Actions
     touch /tmp/startup_finished
   EOT
 }
