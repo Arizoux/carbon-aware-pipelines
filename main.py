@@ -18,8 +18,7 @@ def write_github_output(should_run, region, machine_type, prov_model, workload, 
         return
     with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
         f.write(f"should_run={str(should_run).lower()}\n")
-        if region:
-            f.write(f"region={region}\n")
+        f.write(f"region={region if region else ''}\n")
         f.write(f"machine_type={machine_type}\n")
         f.write(f"provisioning_model={prov_model}\n")
         f.write(f"workload={workload}\n")
