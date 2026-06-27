@@ -31,7 +31,7 @@ def get_filtered_regions(allowed_param):
     """
     groups = {
         "europe": ["STOCKHOLM", "FRANKFURT", "IRELAND", "LONDON", "PARIS", "MILAN", "SPAIN", "ZURICH"],
-        "america": ["QUEBEC", "CALGARY", "VIRGINIA", "OHIO", "OREGON", "CALIFORNIA"],
+        "america": ["QUEBEC", "CALGARY", "VIRGINIA", "OHIO", "OREGON", "CALIFORNIA", "SOUTH_CAROLINA"],
         "asia": ["TOKYO", "OSAKA", "SYDNEY", "MUMBAI"]
     }
 

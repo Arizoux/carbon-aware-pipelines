@@ -36,7 +36,7 @@ def main():
     # 3. Training Loop
     # 5 Epochen dauern auf einer e2-standard-4 (nur CPU) ca. 4-5 Minuten.
     # Du kannst diesen Wert anpassen (z.B. auf 4 oder 6), um genau deine Wunschzeit zu treffen.
-    EPOCHS = 15
+    EPOCHS = 40
     start_time = time.time()
 
     for epoch in range(EPOCHS):

@@ -2,7 +2,7 @@ from enum import Enum
 
 class CarbonAwareRegion(Enum):
     # --- EUROPE ---
-    STOCKHOLM = {"gcp": "europe-north1",      "em_zone": "SE-SE3"}
+    STOCKHOLM = {"gcp": "europe-north2",      "em_zone": "SE-SE3"}
     FRANKFURT = {"gcp": "europe-west3",       "em_zone": "DE"}
     IRELAND   = {"gcp": "europe-west1",       "em_zone": "IE"}
     LONDON    = {"gcp": "europe-west2",       "em_zone": "GB"}
@@ -18,6 +18,7 @@ class CarbonAwareRegion(Enum):
     OHIO      = {"gcp": "us-east5",                "em_zone": "US-MIDW-PJM"}
     OREGON    = {"gcp": "us-west1",                "em_zone": "US-NW-PACW"}
     CALIFORNIA = {"gcp": "us-west2",               "em_zone": "US-CAL-CISO"}
+    SOUTH_CAROLINA = {"gcp": "us-east1",           "em_zone": "US-CAR-SC"}
 
     # --- ASIA PACIFIC ---
     TOKYO     = {"gcp": "asia-northeast1",    "em_zone": "JP-TK"}

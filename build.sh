@@ -21,7 +21,7 @@ if [ "$WORKLOAD" = "short" ]; then
     sleep 5
     echo "✅ Hello World Check passed."
 
-elif [ "$WORKLOAD" = "mid" ]; then
+elif [ "$WORKLOAD" = "long" ]; then
     echo "🐳 Running Mid Workload (Machine Learning Model Training)..."
     cd workloads/ml-training
 
@@ -34,7 +34,7 @@ elif [ "$WORKLOAD" = "mid" ]; then
     echo "🛑 Cleaning up..."
     sudo docker compose down
 
-elif [ "$WORKLOAD" = "long" ]; then
+elif [ "$WORKLOAD" = "mid" ]; then
     echo "🐧 Running Long Workload (Linux Kernel Compilation)..."
     KERNEL_VERSION="6.8.4"
 
