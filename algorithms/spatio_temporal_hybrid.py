@@ -27,7 +27,7 @@ def get_forecast_for_zone(zone_id):
 def get_filtered_regions(allowed_param):
     """
     Parses the allowed_regions parameter to return a list of Enum members.
-    Supports keywords: 'all', 'europe', 'america', 'asia' or a specific list.
+    Supports keywords: 'all', 'europe', 'america', 'asia' inside strings or lists.
     """
     groups = {
         "europe": ["STOCKHOLM", "FRANKFURT", "IRELAND", "LONDON", "PARIS", "MILAN", "SPAIN", "ZURICH"],
@@ -35,30 +35,27 @@ def get_filtered_regions(allowed_param):
         "asia": ["TOKYO", "OSAKA", "SYDNEY", "MUMBAI"]
     }
 
-    selected_names = []
-
-    # Case 1: String Keyword ("all", "europe", "america" or "asia)
     if isinstance(allowed_param, str):
-        choice = allowed_param.lower()
+        raw_names = [allowed_param]
+    elif isinstance(allowed_param, list):
+        raw_names = allowed_param
+    else:
+        return list(CarbonAwareRegion)
+
+    selected_names = []
+    for item in raw_names:
+        choice = str(item).lower()
         if choice == "all":
             return list(CarbonAwareRegion)
         elif choice in groups:
-            selected_names = groups[choice]
+            selected_names.extend(groups[choice])
         else:
-            print(f"Warning: Unknown region group '{choice}'. Falling back to ALL.", file=sys.stderr)
-            return list(CarbonAwareRegion)
-
-    # Case 2: Specific List (e.g., ["STOCKHOLM", "QUEBEC"])
-    elif isinstance(allowed_param, list):
-        selected_names = allowed_param
-
-    else:
-        return list(CarbonAwareRegion)
+            selected_names.append(item)
 
     members = []
     for name in selected_names:
         try:
-            members.append(CarbonAwareRegion[name])
+            members.append(CarbonAwareRegion[name.upper()])
         except KeyError:
             print(f"Warning: {name} is not defined in CarbonAwareRegion Enum.", file=sys.stderr)
 
