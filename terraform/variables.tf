@@ -34,3 +34,9 @@ variable "runner_name" {
   type        = string
   default     = "green-thesis-runner"
 }
+
+variable "workload" {
+  description = "The workload type passed from GitHub Actions (e.g. SHORT, MID, LONG)"
+  type        = string
+  default     = "short"
+}

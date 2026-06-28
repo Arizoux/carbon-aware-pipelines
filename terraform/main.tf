@@ -55,13 +55,19 @@ resource "google_compute_instance" "thesis_runner" {
     export DEBIAN_FRONTEND=noninteractive
     sudo apt-get update
 
-    # Basis-Abhängigkeiten, die wir immer brauchen
+    # Basis-Abhängigkeiten installieren
     sudo apt-get install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev jq netcat-openbsd
 
-    # Wir holen uns die Workload-Variable direkt aus den Instanz-Metadaten von GCP
-    WORKLOAD=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/workload)
+    # 1. Versuch: Aus den GCP-Instanzmetadaten lesen
+    WORKLOAD=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/workload | tr '[:upper:]' '[:lower:]')
 
-    # Nativer Bash-Vergleich statt Terraform-Templating
+    # 2. Versuch: Falls API leer ist, nimm die direkte Terraform-Variable als Fallback
+    if [ -z "$WORKLOAD" ]; then
+        WORKLOAD="${lower(var.workload)}"
+    fi
+
+    echo "Detected Workload for Docker check: $WORKLOAD"
+
     if [ "$WORKLOAD" = "mid" ]; then
         echo "Installing Docker for MID workload..."
         sudo apt-get install -y docker.io docker-compose-v2
@@ -69,11 +75,13 @@ resource "google_compute_instance" "thesis_runner" {
         sudo systemctl start docker
         sudo usermod -aG docker ${var.ssh_user}
         sudo gpasswd -a ${var.ssh_user} docker
+
+        sudo chmod 666 /var/run/docker.sock
     else
-        echo "Skipping Docker installation for workload: $WORKLOAD"
+        echo "Skipping Docker installation. Workload is: $WORKLOAD"
     fi
 
-    # Marker für GitHub Actions
+    # Signalisiere der Pipeline, dass ALLES fertig ist
     touch /tmp/startup_finished
   EOT
 }
