@@ -53,15 +53,19 @@ resource "google_compute_instance" "thesis_runner" {
   metadata_startup_script = <<-EOT
     #!/bin/bash
     export DEBIAN_FRONTEND=noninteractive
-    sudo apt-get update
 
-    # Basis-Abhängigkeiten installieren
+    while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+      echo "Waiting for background apt updates to finish..."
+      sleep 5
+    done
+
+    sudo apt-get update
     sudo apt-get install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev jq netcat-openbsd
 
-    # 1. Versuch: Aus den GCP-Instanzmetadaten lesen
-    WORKLOAD=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/workload | tr '[:upper:]' '[:lower:]')
+    # 2. Metadaten sicher abrufen (das -f sorgt dafür, dass Fehler wirklich leer zurückkommen, statt "Not Found")
+    WORKLOAD=$(curl -sf -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/workload | tr '[:upper:]' '[:lower:]')
 
-    # 2. Versuch: Falls API leer ist, nimm die direkte Terraform-Variable als Fallback
+    # Falls leer, greife sicher auf die Terraform-Variable zurück
     if [ -z "$WORKLOAD" ]; then
         WORKLOAD="${lower(var.workload)}"
     fi
@@ -70,18 +74,20 @@ resource "google_compute_instance" "thesis_runner" {
 
     if [ "$WORKLOAD" = "mid" ]; then
         echo "Installing Docker for MID workload..."
+
+        # Erneuter Check, falls das apt-Lock wieder zugeschlagen hat
+        while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 3; done
+
         sudo apt-get install -y docker.io docker-compose-v2
         sudo systemctl enable docker
         sudo systemctl start docker
         sudo usermod -aG docker ${var.ssh_user}
-        sudo gpasswd -a ${var.ssh_user} docker
-
         sudo chmod 666 /var/run/docker.sock
     else
         echo "Skipping Docker installation. Workload is: $WORKLOAD"
     fi
 
-    # Signalisiere der Pipeline, dass ALLES fertig ist
+    # Signalisiere der Pipeline, dass ALLES erfolgreich installiert wurde
     touch /tmp/startup_finished
   EOT
 }
