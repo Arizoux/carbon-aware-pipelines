@@ -135,7 +135,7 @@ def evaluate(params):
         return {"should_run": True, "region": best_region.gcp_id}
     else:
         return {
-            "should_run": False,
+            "should_run": True, #should be false (for testing is set to true)
             "region": best_region.gcp_id,
             "planned_time": best_start_time.isoformat()
         }
