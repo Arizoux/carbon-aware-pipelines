@@ -1,13 +1,13 @@
 {
-  "active_profile": "latency_c2",
-  "active_workload": "long",
+  "active_profile": "carbon",
+  "active_workload": "short",
 
   "profiles": {
     "carbon": {
       "strategy": "spatio_temporal_hybrid",
       "runner_name": "green-thesis-runner",
-      "enable_batching": true,
-      "machine_type": "e2-standard-4",
+      "enable_batching": false,
+      "machine_type": "e2-standard-8",
       "provisioning_model": "SPOT",
       "home_region": "FRANKFURT",
       "allowed_regions": ["all"],
