@@ -81,27 +81,28 @@ jobs:
           TF_VAR_gcp_machine_type: ${{ needs.evaluate_grid.outputs.machine_type }}
           TF_VAR_gcp_provisioning_model: ${{ needs.evaluate_grid.outputs.provisioning_model }}
           TF_VAR_runner_name: ${{ needs.evaluate_grid.outputs.runner_name }}
+          TF_VAR_workload: ${{ needs.evaluate_grid.outputs.workload }} # <─── NEU: Reicht die Variable an Terraform weiter
         run: terraform apply -auto-approve
 
       - name: Run CI/CD Workload
         run: |
-            VM_IP=$(terraform -chdir=./terraform output -raw vm_ip)
-            TARGET_WORKLOAD="${{ needs.evaluate_grid.outputs.workload }}"
-            
-            echo "Waiting for SSH on $VM_IP..."
-            while ! nc -z $VM_IP 22; do sleep 5; done
-            
-            SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa"
-            
-            echo "Waiting for GCP startup script to finish installing Docker..."
-            while ! ssh $SSH_OPTS runner@$VM_IP "test -f /tmp/startup_finished" >/dev/null 2>&1; do
-              echo "Dependencies are still installing... retrying in 10 seconds."
-              sleep 10
-            done
-            
-            scp $SSH_OPTS -r ./* runner@$VM_IP:/home/runner/
-            
-            ssh $SSH_OPTS runner@$VM_IP "chmod +x build.sh && ./build.sh $TARGET_WORKLOAD"
+          VM_IP=$(terraform -chdir=./terraform output -raw vm_ip)
+          TARGET_WORKLOAD="${{ needs.evaluate_grid.outputs.workload }}"
+          
+          echo "Waiting for SSH on $VM_IP..."
+          while ! nc -z $VM_IP 22; do sleep 5; done
+          
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa"
+          
+          echo "Waiting for GCP startup script to finish installing Docker..."
+          while ! ssh $SSH_OPTS runner@$VM_IP "test -f /tmp/startup_finished" >/dev/null 2>&1; do
+            echo "Dependencies are still installing... retrying in 10 seconds."
+            sleep 10
+          done
+          
+          scp $SSH_OPTS -r ./* runner@$VM_IP:/home/runner/
+          
+          ssh $SSH_OPTS runner@$VM_IP "chmod +x build.sh && ./build.sh $TARGET_WORKLOAD"
 
       - name: Terraform Destroy
         if: always()
@@ -113,4 +114,5 @@ jobs:
           TF_VAR_gcp_machine_type: ${{ needs.evaluate_grid.outputs.machine_type }}
           TF_VAR_gcp_provisioning_model: ${{ needs.evaluate_grid.outputs.provisioning_model }}
           TF_VAR_runner_name: ${{ needs.evaluate_grid.outputs.runner_name }}
+          TF_VAR_workload: ${{ needs.evaluate_grid.outputs.workload }} # <─── NEU: Auch beim Destroy mitsenden, um Validierungsfehler zu vermeiden
         run: terraform destroy -auto-approve
