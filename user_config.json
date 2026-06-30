@@ -1,11 +1,11 @@
 {
-  "active_profile": "cost",
+  "active_profile": "latency_e2",
   "active_workload": "mid",
 
   "profiles": {
     "carbon": {
       "strategy": "spatio_temporal_hybrid",
-      "runner_name": "green-thesis-runner",
+      "runner_name": "carbon-runner",
       "enable_batching": false,
       "machine_type": "e2-standard-4",
       "provisioning_model": "SPOT",
