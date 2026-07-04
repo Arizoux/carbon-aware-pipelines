@@ -31,7 +31,7 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    EPOCHS = 25
+    EPOCHS = 40
     start_time = time.time()
 
     for epoch in range(EPOCHS):
