@@ -1,6 +1,6 @@
 {
   "active_profile": "cost",
-  "active_workload": "short",
+  "active_workload": "long",
 
   "profiles": {
     "carbon": {
