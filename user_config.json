@@ -1,6 +1,6 @@
 {
-  "active_profile": "cost",
-  "active_workload": "long",
+  "active_profile": "latency_e2",
+  "active_workload": "mid",
 
   "profiles": {
     "carbon": {
