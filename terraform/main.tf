@@ -20,7 +20,6 @@ data "google_compute_zones" "available" {
 resource "google_compute_instance" "thesis_runner" {
   name         = var.runner_name
   machine_type = var.gcp_machine_type
-
   zone         = data.google_compute_zones.available.names[0]
 
   labels = {
@@ -48,34 +47,51 @@ resource "google_compute_instance" "thesis_runner" {
 
   metadata = {
     ssh-keys = "${var.ssh_user}:${var.ssh_pub_key}"
+    workload = var.workload
   }
 
   metadata_startup_script = <<-EOT
     #!/bin/bash
     export DEBIAN_FRONTEND=noninteractive
 
+    # Warte auf Standard-Ubuntu Cloud-Init Locks
     while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
       echo "Waiting for background apt updates to finish..."
       sleep 5
     done
 
-    sudo apt-get update
-    sudo apt-get install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev jq netcat-openbsd
-
-    # 2. Metadaten sicher abrufen (das -f sorgt dafür, dass Fehler wirklich leer zurückkommen, statt "Not Found")
+    # Metadaten sicher abrufen und in Kleinbuchstaben konvertieren
     WORKLOAD=$(curl -sf -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/workload | tr '[:upper:]' '[:lower:]')
 
-    # Falls leer, greife sicher auf die Terraform-Variable zurück
     if [ -z "$WORKLOAD" ]; then
         WORKLOAD="${lower(var.workload)}"
     fi
 
-    echo "Detected Workload for Docker check: $WORKLOAD"
+    echo "Detected Workload in Startup Script: $WORKLOAD"
 
-    if [ "$WORKLOAD" = "mid" ]; then
-        echo "Installing Docker for MID workload..."
+    # Überprüfen, ob es sich um den minimalen Check handelt
+    if [ "$WORKLOAD" = "short" ] || [ "$WORKLOAD" = "hello-world" ]; then
+        echo "Minimaler Workload erkannt. Installiere nur Netcat fürs Pipeline-Polling."
+        sudo apt-get update && sudo apt-get install -y netcat-openbsd
 
-        # Erneuter Check, falls das apt-Lock wieder zugeschlagen hat
+        # Sofort beenden und Signal-File schreiben
+        touch /tmp/startup_finished
+        exit 0
+    fi
+
+    # =========================================================================
+    # AB HIER: Höhere Workloads (MID / LONG) bekommen schwerere Abhängigkeiten
+    # =========================================================================
+
+    sudo apt-get update
+
+    # 1. Compiler-Werkzeuge für Kernel-Build (MID oder LONG, je nachdem wie du es planst)
+    # Falls du Docker für das CNN nutzt, braucht das CNN diese Pakete lokal evtl. gar nicht.
+    sudo apt-get install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev jq netcat-openbsd
+
+    # 2. Docker Installation nur für Container-Workloads
+    if [ "$WORKLOAD" = "mid" ] || [ "$WORKLOAD" = "long" ]; then
+        echo "Installing Docker for Container Workload..."
         while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 3; done
 
         sudo apt-get install -y docker.io docker-compose-v2
@@ -83,11 +99,9 @@ resource "google_compute_instance" "thesis_runner" {
         sudo systemctl start docker
         sudo usermod -aG docker ${var.ssh_user}
         sudo chmod 666 /var/run/docker.sock
-    else
-        echo "Skipping Docker installation. Workload is: $WORKLOAD"
     fi
 
-    # Signalisiere der Pipeline, dass ALLES erfolgreich installiert wurde
+    # Signalisiere der Pipeline das erfolgreiche Ende der Provisionierung
     touch /tmp/startup_finished
   EOT
 }
