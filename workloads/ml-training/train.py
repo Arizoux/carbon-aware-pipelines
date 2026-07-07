@@ -15,7 +15,7 @@ def main():
     print(f"🖥️ PyTorch is utilizing {num_cores} CPU cores for training.")
 
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
-    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True, num_workers=2)
 
     model = nn.Sequential(
@@ -31,7 +31,7 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    EPOCHS = 40
+    EPOCHS = 25
     start_time = time.time()
 
     for epoch in range(EPOCHS):

@@ -25,8 +25,12 @@ elif [ "$WORKLOAD" = "mid" ]; then
     echo "🐳 Running Mid Workload (Machine Learning Model Training)..."
     cd workloads/ml-training
 
-    echo "🔨 Building Docker Image (Installing ML Libraries)..."
-    sudo docker compose build --no-cache
+    echo "⚙️ Configuring Docker Buildx environment..."
+    sudo docker buildx create --name thesis-builder --use --driver docker-container 2>/dev/null || sudo docker buildx use thesis-builder
+    sudo docker buildx inspect --bootstrap
+
+    echo "🔨 Building Docker Image with Buildx via Compose..."
+    DOCKER_BUILDKIT=1 sudo docker compose build --no-cache
 
     echo "🧠 Running Neural Network Training Loop..."
     sudo docker compose up --abort-on-container-exit
