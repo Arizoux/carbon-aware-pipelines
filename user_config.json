@@ -18,7 +18,7 @@
     "latency_e2": {
       "strategy": "immediate",
       "runner_name": "lat-e2-runner",
-      "region": "europe-north2",
+      "region": "europe-west3",
       "machine_type": "e2-standard-32",
       "provisioning_model": "STANDARD",
       "run_duration": 0.25
