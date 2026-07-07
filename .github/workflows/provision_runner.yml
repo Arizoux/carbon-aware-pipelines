@@ -100,8 +100,15 @@ jobs:
             sleep 10
           done
           
+          if [ "$TARGET_WORKLOAD" = "mid" ]; then
+            echo "Workload ist 'mid'. Installiere Docker Buildx auf der GCP-VM..."
+            ssh $SSH_OPTS runner@$VM_IP "sudo apt-get update && sudo apt-get install -y docker-buildx-plugin || sudo apt-get install -y docker-buildx"
+          fi
+          
+          # Code auf die VM kopieren
           scp $SSH_OPTS -r ./* runner@$VM_IP:/home/runner/
           
+          echo "Starte Workload: $TARGET_WORKLOAD"
           ssh $SSH_OPTS runner@$VM_IP "chmod +x build.sh && ./build.sh $TARGET_WORKLOAD"
 
       - name: Terraform Destroy
