@@ -1,5 +1,5 @@
 {
-  "active_profile": "cost",
+  "active_profile": "latency_e2",
   "active_workload": "mid",
 
   "profiles": {
