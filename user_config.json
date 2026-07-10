@@ -1,5 +1,5 @@
 {
-  "active_profile": "carbon",
+  "active_profile": "latency_e2",
   "active_workload": "short",
 
   "profiles": {
