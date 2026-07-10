@@ -1,5 +1,5 @@
 {
-  "active_profile": "latency_e2",
+  "active_profile": "carbon",
   "active_workload": "mid",
 
   "profiles": {
@@ -12,7 +12,7 @@
       "home_region": "FRANKFURT",
       "allowed_regions": ["all"],
       "forecast_window_hours": 6,
-      "run_duration": 0.25,
+      "run_duration": 0.5,
       "energy_kwh": { "e_boot": 0.001, "e_run": 0.005 }
     },
     "latency_e2": {
