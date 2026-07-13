@@ -1,6 +1,6 @@
 {
   "active_profile": "carbon",
-  "active_workload": "mid",
+  "active_workload": "short",
 
   "profiles": {
     "carbon": {
@@ -10,7 +10,7 @@
       "machine_type": "e2-standard-16",
       "provisioning_model": "SPOT",
       "home_region": "FRANKFURT",
-      "allowed_regions": ["all"],
+      "allowed_regions": ["FRANKFURT"],
       "forecast_window_hours": 6,
       "run_duration": 0.5,
       "energy_kwh": { "e_boot": 0.001, "e_run": 0.005 }
