@@ -68,12 +68,10 @@ def evaluate(params):
     Checks all selected regions and finds the best 15-minute window
     within the forecast horizon.
     """
-    # 1. Extract Config
     run_duration = params.get("run_duration")
     forecase_window_hours = params.get("forecast_window_hours")
     allowed_regions = params.get("allowed_regions", "all")
 
-    # 2. Get target regions based on config
     target_regions = get_filtered_regions(allowed_regions)
 
     now = datetime.now(timezone.utc)
@@ -88,12 +86,10 @@ def evaluate(params):
 
     print(f"[Hybrid] Evaluating {len(target_regions)} regions (Scope: {allowed_regions})", file=sys.stderr)
 
-    # 3. Iterate through every target region
     for region in target_regions:
         print(f"current region: {region.name}", file=sys.stderr)
         forecast_data = get_forecast_for_zone(region.em_id)
 
-        # Filter data points within our search horizon
         relevant_points = [
             p for p in forecast_data
             if now <= datetime.fromisoformat(p["datetime"].replace('Z', '+00:00')) <= limit_time
@@ -102,12 +98,10 @@ def evaluate(params):
         if len(relevant_points) < k_points:
             continue
 
-        # 4. Sliding Window calculation for this specific region
         for i in range(len(relevant_points) - k_points + 1):
             window = relevant_points[i: i + k_points]
             avg_ci = sum(p["carbonIntensity"] for p in window) / k_points
 
-            # Update global minimum if this window is cleaner
             if avg_ci < global_best["avg_ci"]:
                 global_best = {
                     "avg_ci": avg_ci,
@@ -115,7 +109,6 @@ def evaluate(params):
                     "region": region
                 }
 
-    # 5. Result Determination
     if global_best["region"] is None:
         print("Error: No forecast data found for selected regions.", file=sys.stderr)
         return {"should_run": False, "region": None}
@@ -129,13 +122,11 @@ def evaluate(params):
     print(f"Optimal Start: {best_start_time} UTC (in {time_until_start:.2f}h)", file=sys.stderr)
     print(f"Avg CI: {global_best['avg_ci']:.1f} gCO2eq/kWh", file=sys.stderr)
 
-    # 6. Return Decision
-    # Trigger if time is within the 15-minute start window
     if time_until_start <= 0.25:
         return {"should_run": True, "region": best_region.gcp_id}
     else:
         return {
-            "should_run": True, #should be false (for testing is set to true)
+            "should_run": True,
             "region": best_region.gcp_id,
             "planned_time": best_start_time.isoformat()
         }
