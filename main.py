@@ -18,7 +18,7 @@ def write_github_output(should_run, region, machine_type, prov_model, workload, 
         return
     with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
         f.write(f"should_run={str(should_run).lower()}\n")
-        f.write(f"region={region if region else ''}\n")  # Verhindert leere Variablen-Crashes in Terraform
+        f.write(f"region={region if region else ''}\n")
         f.write(f"machine_type={machine_type}\n")
         f.write(f"provisioning_model={prov_model}\n")
         f.write(f"workload={workload}\n")
@@ -66,7 +66,6 @@ def main():
     print(f"--- ACTIVE PROFILE: {active_profile.upper()} ---")
     print(f"--- GLOBAL WORKLOAD: {active_workload.upper()} ---")
 
-    # 1. IMMEDIATE-Strategien (Latency / Cost)
     if params.get("strategy") == "immediate":
         fixed_region = params.get("region")
 
@@ -75,7 +74,6 @@ def main():
         if batching_enabled_immediate:
             plan_result = check_existing_plan(params["machine_type"], params["provisioning_model"])
             if plan_result:
-                # FIXED: Wir nutzen fixed_region statt plan_result["region"], falls noch Fragmente im Cache lagen
                 write_github_output(plan_result["should_run"], fixed_region, params["machine_type"],
                                     params["provisioning_model"], active_workload, runner_name)
                 return
@@ -96,8 +94,7 @@ def main():
                                 active_workload, runner_name)
             return
 
-    # 2. CARBON-Strategie (Spatio-Temporal)
-    batching_enabled_carbon = params.get("enable_batching", True)  # Für Carbon bleibt Default True
+    batching_enabled_carbon = params.get("enable_batching", True)
 
     if batching_enabled_carbon:
         plan_result = check_existing_plan(params["machine_type"], params["provisioning_model"])

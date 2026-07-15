@@ -35,7 +35,6 @@ jobs:
           restore-keys: |
             carbon-plan-
 
-      # 2. Run the Python Script
       - name: Run Carbon Scheduler Strategy
         id: algo
         env:
@@ -62,7 +61,6 @@ jobs:
         with:
           terraform_wrapper: false
 
-      # 3. Create Ephemeral SSH Key
       - name: Generate SSH Key
         run: |
           ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
@@ -81,7 +79,7 @@ jobs:
           TF_VAR_gcp_machine_type: ${{ needs.evaluate_grid.outputs.machine_type }}
           TF_VAR_gcp_provisioning_model: ${{ needs.evaluate_grid.outputs.provisioning_model }}
           TF_VAR_runner_name: ${{ needs.evaluate_grid.outputs.runner_name }}
-          TF_VAR_workload: ${{ needs.evaluate_grid.outputs.workload }} # <─── NEU: Reicht die Variable an Terraform weiter
+          TF_VAR_workload: ${{ needs.evaluate_grid.outputs.workload }}
         run: terraform apply -auto-approve
 
       - name: Run CI/CD Workload
@@ -121,5 +119,5 @@ jobs:
           TF_VAR_gcp_machine_type: ${{ needs.evaluate_grid.outputs.machine_type }}
           TF_VAR_gcp_provisioning_model: ${{ needs.evaluate_grid.outputs.provisioning_model }}
           TF_VAR_runner_name: ${{ needs.evaluate_grid.outputs.runner_name }}
-          TF_VAR_workload: ${{ needs.evaluate_grid.outputs.workload }} # <─── NEU: Auch beim Destroy mitsenden, um Validierungsfehler zu vermeiden
+          TF_VAR_workload: ${{ needs.evaluate_grid.outputs.workload }}
         run: terraform destroy -auto-approve

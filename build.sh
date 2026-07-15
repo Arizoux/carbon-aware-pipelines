@@ -1,9 +1,6 @@
 #!/bin/bash
-# Exit on error
 set -e
 
-# Welcher Workload soll ausgeführt werden? (short, mid, long)
-# Fallback ist 'short', falls nichts übergeben wird
 WORKLOAD=${1:-short}
 
 echo "===================================================="

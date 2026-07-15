@@ -8,11 +8,11 @@ import os
 
 
 def main():
-    print("🧠 Starting ML Workload: Training CNN on CIFAR-10")
+    print(" Starting ML Workload: Training CNN on CIFAR-10")
 
     num_cores = os.cpu_count()
     torch.set_num_threads(num_cores)
-    print(f"🖥️ PyTorch is utilizing {num_cores} CPU cores for training.")
+    print(f"PyTorch is utilizing {num_cores} CPU cores for training.")
 
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform)
@@ -45,9 +45,9 @@ def main():
             optimizer.step()
             running_loss += loss.item()
 
-        print(f"🔄 Epoch {epoch + 1}/{EPOCHS} complete. Loss: {running_loss / len(trainloader):.3f}")
+        print(f" Epoch {epoch + 1}/{EPOCHS} complete. Loss: {running_loss / len(trainloader):.3f}")
 
-    print(f"✅ Training finished in {time.time() - start_time:.2f} seconds.")
+    print(f" Training finished in {time.time() - start_time:.2f} seconds.")
 
 
 if __name__ == "__main__":
