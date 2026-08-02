@@ -1,6 +1,6 @@
 {
   "active_profile": "carbon",
-  "active_workload": "long",
+  "active_workload": "short",
 
   "profiles": {
     "carbon": {
@@ -12,22 +12,13 @@
       "home_region": "FRANKFURT",
       "allowed_regions": ["all"],
       "forecast_window_hours": 6,
-      "run_duration": 0.5,
-      "energy_kwh": { "e_boot": 0.001, "e_run": 0.005 }
+      "run_duration": 0.5
     },
-    "latency_e2": {
+    "baseline": {
       "strategy": "immediate",
       "runner_name": "lat-e2-runner",
       "region": "europe-west3",
       "machine_type": "e2-standard-8",
-      "provisioning_model": "STANDARD",
-      "run_duration": 0.25
-    },
-    "cost": {
-      "strategy": "immediate",
-      "runner_name": "cost-runner",
-      "region": "us-east1",
-      "machine_type": "e2-standard-4",
       "provisioning_model": "SPOT",
       "run_duration": 0.25
     }

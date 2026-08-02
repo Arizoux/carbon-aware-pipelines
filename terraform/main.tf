@@ -54,13 +54,11 @@ resource "google_compute_instance" "thesis_runner" {
     #!/bin/bash
     export DEBIAN_FRONTEND=noninteractive
 
-    # Warte auf Standard-Ubuntu Cloud-Init Locks
     while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
       echo "Waiting for background apt updates to finish..."
       sleep 5
     done
 
-    # Metadaten sicher abrufen und in Kleinbuchstaben konvertieren
     WORKLOAD=$(curl -sf -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/workload | tr '[:upper:]' '[:lower:]')
 
     if [ -z "$WORKLOAD" ]; then
@@ -69,24 +67,16 @@ resource "google_compute_instance" "thesis_runner" {
 
     echo "Detected Workload in Startup Script: $WORKLOAD"
 
-    # Überprüfen, ob es sich um den minimalen Check handelt
     if [ "$WORKLOAD" = "short" ] || [ "$WORKLOAD" = "hello-world" ]; then
         echo "Minimaler Workload erkannt. Installiere nur Netcat fürs Pipeline-Polling."
         sudo apt-get update && sudo apt-get install -y netcat-openbsd
 
-        # Sofort beenden und Signal-File schreiben
         touch /tmp/startup_finished
         exit 0
     fi
 
-    # =========================================================================
-    # AB HIER: Höhere Workloads (MID / LONG) bekommen schwerere Abhängigkeiten
-    # =========================================================================
-
     sudo apt-get update
 
-    # 1. Compiler-Werkzeuge für Kernel-Build (MID oder LONG, je nachdem wie du es planst)
-    # Falls du Docker für das CNN nutzt, braucht das CNN diese Pakete lokal evtl. gar nicht.
     sudo apt-get install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev jq netcat-openbsd
 
     # 2. Docker Installation nur für Container-Workloads
